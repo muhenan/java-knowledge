@@ -21,9 +21,74 @@ package com.henan.javaknowledge.jvm.gc;
  *   2. Mixed GC：回收年轻代 + 部分老年代 Region
  *   3. Full GC：回收整个堆（应该避免）
  *
+ * ========================================================================
+ * 🔧 G1 GC 常用 JVM 参数详解
+ * ========================================================================
+ * 
+ * ▸ 启用 G1 收集器：
+ *   -XX:+UseG1GC                     # 启用 G1 垃圾收集器
+ * 
+ * ▸ 堆大小配置：
+ *   -Xms4g -Xmx8g                    # 初始堆 4GB，最大堆 8GB
+ *   -XX:G1HeapRegionSize=16m         # 设置 Region 大小为 16MB（1MB-32MB）
+ * 
+ * ▸ 暂停时间控制（G1 的核心优势）：
+ *   -XX:MaxGCPauseMillis=200         # 目标最大暂停时间 200ms（默认 200ms）
+ *   -XX:G1PauseIntervalMillis=1000   # GC 暂停间隔目标时间 1000ms
+ * 
+ * ▸ 年轻代配置：
+ *   -XX:G1NewSizePercent=20          # 年轻代最小占比 20%（默认 5%）
+ *   -XX:G1MaxNewSizePercent=40       # 年轻代最大占比 40%（默认 60%）
+ *   -XX:G1YoungGenSize=2g            # 固定年轻代大小（不推荐，影响自适应）
+ * 
+ * ▸ Mixed GC 触发条件：
+ *   -XX:G1MixedGCLiveThresholdPercent=85    # Region 中存活对象超过 85% 不参与 Mixed GC
+ *   -XX:G1HeapWastePercent=10               # 堆浪费率超过 10% 触发 Mixed GC
+ *   -XX:G1MixedGCCountTarget=8              # Mixed GC 循环中的目标次数
+ * 
+ * ▸ 并发标记配置：
+ *   -XX:G1ConcMarkStepDurationMillis=10     # 并发标记步骤持续时间
+ *   -XX:G1ConcRSHotCardLimit=16             # 热卡片限制
+ * 
+ * ▸ 大对象处理：
+ *   -XX:G1HeapRegionSize=32m         # 增大 Region 减少大对象
+ *   # 大对象阈值 = G1HeapRegionSize * 0.5，超过此大小直接进入 Humongous Region
+ * 
+ * ▸ GC 日志和监控：
+ *   -XX:+PrintGC                     # 打印 GC 基本信息
+ *   -XX:+PrintGCDetails              # 打印 GC 详细信息
+ *   -XX:+PrintGCTimeStamps           # 打印 GC 时间戳
+ *   -XX:+PrintGCApplicationStoppedTime      # 打印应用暂停时间
+ *   -Xloggc:gc.log                   # GC 日志输出到文件
+ * 
+ * ▸ 性能调优示例：
+ *   # 低延迟应用（目标暂停 < 50ms）
+ *   -XX:+UseG1GC -XX:MaxGCPauseMillis=50 -XX:G1HeapRegionSize=8m
+ * 
+ *   # 大堆应用（16GB+ 堆）
+ *   -XX:+UseG1GC -XX:G1HeapRegionSize=32m -XX:G1NewSizePercent=30
+ * 
+ *   # 高吞吐量应用
+ *   -XX:+UseG1GC -XX:MaxGCPauseMillis=500 -XX:G1MixedGCCountTarget=16
+ * 
+ * ▸ G1 vs 其他收集器的选择：
+ *   - G1：       大堆 + 低延迟需求（6GB+，暂停 < 500ms）
+ *   - Parallel： 高吞吐量优先，可接受较长暂停时间
+ *   - CMS：      中小堆 + 低延迟（已过时，建议用 G1）
+ *   - ZGC：      超大堆 + 极低延迟（64GB+，暂停 < 10ms）
+ *   - Shenandoah：类似 ZGC，更适合云原生环境
+ * 
+ * ▸ 常见调优步骤：
+ *   1. 启用 G1：-XX:+UseG1GC
+ *   2. 设置目标暂停时间：-XX:MaxGCPauseMillis=200
+ *   3. 观察 GC 日志，调整 Region 大小
+ *   4. 根据应用特性调整年轻代比例
+ *   5. 避免 Full GC（通过增大堆或优化代码）
+ * 
  * 本示例目标：
  * ✅ 完整模拟 G1 的 Region 划分和回收过程
  * ✅ 展示 G1 如何实现低延迟和可预测的暂停时间
+ * ✅ 理解关键 JVM 参数对 G1 性能的影响
  */
 
 import java.util.*;
