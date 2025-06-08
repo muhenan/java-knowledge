@@ -1,4 +1,4 @@
-package com.henan.javaknowledge.memoryManagement.threadPrivate;
+package com.henan.javaknowledge.jvm.memoryManagement.threadPrivate;
 
 /**
  * ✅ Java 内存结构 - 程序计数器（Program Counter, PC）

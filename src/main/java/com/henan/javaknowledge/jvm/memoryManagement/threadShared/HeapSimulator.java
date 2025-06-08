@@ -1,4 +1,4 @@
-package com.henan.javaknowledge.memoryManagement.threadShared;
+package com.henan.javaknowledge.jvm.memoryManagement.threadShared;
 
 /**
  * ✅ Java 内存结构 - Heap（堆）

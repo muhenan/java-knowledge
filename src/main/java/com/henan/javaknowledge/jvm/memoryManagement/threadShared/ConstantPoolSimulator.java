@@ -1,4 +1,4 @@
-package com.henan.javaknowledge.memoryManagement.threadShared;
+package com.henan.javaknowledge.jvm.memoryManagement.threadShared;
 
 /**
  * ✅ Java 内存结构 - 运行时常量池（Runtime Constant Pool）

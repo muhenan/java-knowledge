@@ -1,4 +1,4 @@
-package com.henan.javaknowledge.memoryManagement.threadPrivate;
+package com.henan.javaknowledge.jvm.memoryManagement.threadPrivate;
 
 /**
  * ✅ Java 内存结构 - 本地方法栈（Native Method Stack）
