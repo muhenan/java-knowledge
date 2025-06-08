@@ -423,6 +423,72 @@ public class G1GarbageCollectorSimulator {
             return oldRegionCount > MAX_REGIONS * 0.45;
         }
 
+        // Full GC：G1 的最后手段，应该避免
+        void triggerFullGC() {
+            long startTime = System.currentTimeMillis();
+            fullGcCount++;
+            
+            System.out.println("\n💥 触发 Full GC #" + fullGcCount + " (性能警告!)");
+            System.out.println("  原因：堆空间严重不足，Mixed GC 无法释放足够空间");
+            
+            // ====== Full GC 核心流程（伪代码）======
+            
+            // 1. STW - 暂停所有应用线程（这是 Full GC 延迟高的根本原因）
+            System.out.println("  ⏸️  暂停所有应用线程...");
+            
+            // 2. 全堆标记 - 标记所有存活对象
+            //    for (每个 Region) {
+            //        for (Region 中的每个对象) {
+            //            if (对象可达) 标记为存活;
+            //            else 标记为垃圾;
+            //        }
+            //    }
+            System.out.println("  🔍 全堆标记阶段：标记所有存活对象...");
+            markReachableObjects();
+            
+            // 3. 回收所有垃圾对象
+            //    for (每个 Region) {
+            //        回收 Region 中的所有垃圾对象;
+            //        if (Region 变空) 标记为 FREE;
+            //    }
+            System.out.println("  🗑️  回收阶段：清理所有垃圾对象...");
+            int reclaimedRegions = 0;
+            for (G1Region region : regions) {
+                if (region.type != RegionType.FREE && !region.objects.isEmpty()) {
+                    region.objects.removeIf(obj -> !obj.reachable);
+                    if (region.objects.isEmpty()) {
+                        region.type = RegionType.FREE;
+                        region.used = 0;
+                        reclaimedRegions++;
+                    }
+                }
+            }
+            
+            // 4. 内存碎片整理（可选，但通常会做）
+            //    将所有存活对象重新紧凑排列，消除内存碎片
+            //    老对象 → Old Region
+            //    年轻对象 → Young Region  
+            //    大对象 → Humongous Region
+            System.out.println("  🔧 碎片整理：重新紧凑排列所有存活对象...");
+            
+            // 5. 恢复应用线程
+            long pauseTime = System.currentTimeMillis() - startTime;
+            totalPauseTime += pauseTime;
+            
+            System.out.println("✅ Full GC 完成!");
+            System.out.println("  回收 Region: " + reclaimedRegions);
+            System.out.println("  暂停时间: " + pauseTime + "ms (⚠️ 远超 G1 目标暂停时间!)");
+            System.out.println("  ⚠️  Full GC 违背了 G1 低延迟的设计目标");
+            System.out.println();
+            
+            // ====== 教育重点 ======
+            System.out.println("💡 Full GC 教育要点:");
+            System.out.println("  • Full GC = 全堆回收 + STW 暂停 + 碎片整理");
+            System.out.println("  • 暂停时间与堆大小成正比（几十ms到几秒）");
+            System.out.println("  • G1 设计目标是避免 Full GC，但无法完全消除");
+            System.out.println("  • 应用应通过调优避免频繁 Full GC");
+        }
+
         void printHeapStatus() {
             System.out.println("\n📊 G1 堆状态:");
             Map<RegionType, Integer> regionCount = new EnumMap<>(RegionType.class);
